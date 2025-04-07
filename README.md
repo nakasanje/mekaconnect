@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # meka_app
 
 A new Flutter project.
@@ -15,6 +14,3 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
-=======
-# mekaconnect
->>>>>>> 2e9a772d767f662e6792503204ec7d2787a593e6
