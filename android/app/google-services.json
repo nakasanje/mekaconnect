@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305204923050",
+    "project_id": "mechaconnect-4e83b",
+    "storage_bucket": "mechaconnect-4e83b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305204923050:android:172a1ca44f373338b9ded3",
+        "android_client_info": {
+          "package_name": "com.example.meka_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwRUptjFwtyTo9ON5C3y4urkbZ52volNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
