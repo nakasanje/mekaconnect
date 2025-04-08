@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:meka_app/Admin/adminscreen.dart';
 import 'package:meka_app/screens/home_screen.dart';
 import 'package:meka_app/screens/login_screen.dart';
 import 'package:meka_app/screens/main_screen.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       // Ensure 'LoginScreen' is correctly imported
-      home: const LoginScreen(),
+      home: const AdminDashboardScreen(),
     );
   }
 }

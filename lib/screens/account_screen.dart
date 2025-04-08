@@ -89,6 +89,7 @@ class _AccountScreenState extends State<AccountScreen> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': user.phoneNumber,
+        'role': 'user', // Adding the 'role' field here
         'updatedAt': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
       };
