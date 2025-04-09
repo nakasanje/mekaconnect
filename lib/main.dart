@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       // Ensure 'LoginScreen' is correctly imported
-      home: const AdminDashboardScreen(),
+      home: const LoginScreen(),
     );
   }
 }

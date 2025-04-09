@@ -1,19 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:meka_app/models/user.dart';
 import 'package:meka_app/screens/userdetailspage.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  _AccountScreenState createState() => _AccountScreenState();
+  State<AccountScreen> createState() => _AccountScreenState();
 }
 
 class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -30,85 +30,67 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _fetchUserDetails() async {
-    setState(() {
-      _isFetching = true;
-    });
+    setState(() => _isFetching = true);
 
     final user = _auth.currentUser;
     if (user == null) {
-      // Handle user not logged in
-      setState(() {
-        _isFetching = false;
-      });
+      setState(() => _isFetching = false);
       return;
     }
 
-    _userPhoneNumber = user.phoneNumber ?? 'No phone number available';
+    _userPhoneNumber = user.phoneNumber ?? '';
 
     try {
       final docSnapshot =
           await _firestore.collection('users').doc(user.uid).get();
 
       if (docSnapshot.exists) {
-        final data = docSnapshot.data();
-        _userDetailsExist = true; // User details exist in Firestore
-        _nameController.text = data?['name'] ?? '';
-        _emailController.text = data?['email'] ?? '';
+        final userModel = UserModel.fromMap(docSnapshot.data()!);
+        _nameController.text = userModel.name;
+        _userDetailsExist = true;
       } else {
-        _userDetailsExist = false; // User details don't exist
+        _userDetailsExist = false;
       }
     } catch (e) {
-      // Error fetching user details
       _showSnackBar('Error fetching details: ${e.toString()}', isError: true);
     } finally {
-      setState(() {
-        _isFetching = false;
-      });
+      setState(() => _isFetching = false);
     }
   }
 
   Future<void> _saveUserDetails() async {
-    // Validate form
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     final user = _auth.currentUser;
     if (user == null) {
-      _showSnackBar('User not found. Cannot save details.', isError: true);
-      setState(() {
-        _isLoading = false;
-      });
+      _showSnackBar('User not found.', isError: true);
+      setState(() => _isLoading = false);
       return;
     }
 
-    try {
-      final userData = {
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': user.phoneNumber,
-        'role': 'user', // Adding the 'role' field here
-        'updatedAt': FieldValue.serverTimestamp(),
-        'createdAt': FieldValue.serverTimestamp(),
-      };
+    final userModel = UserModel(
+      uid: user.uid,
+      name: _nameController.text.trim(),
+      phone: _userPhoneNumber, // Use the phone number fetched from Firebase
+      role: 'user', // Set role to 'user' for the account screen
+    );
 
+    try {
       await _firestore.collection('users').doc(user.uid).set(
-            userData,
+            userModel.toMap(),
             SetOptions(merge: true),
           );
 
       _showSnackBar('Account details saved successfully!');
       setState(() {
-        _userDetailsExist = true; // Mark that details are now saved
+        _userDetailsExist = true;
       });
     } catch (e) {
       _showSnackBar('Error saving details: ${e.toString()}', isError: true);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -116,17 +98,15 @@ class _AccountScreenState extends State<AccountScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).snackBarTheme.backgroundColor,
+        backgroundColor:
+            isError ? Colors.red : Theme.of(context).colorScheme.primary,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -136,76 +116,61 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       body: SafeArea(
         child: _isFetching
-            ? const Center(
-                child: CircularProgressIndicator()) // Show loading spinner
+            ? const Center(child: CircularProgressIndicator())
             : _userDetailsExist
-                ? UserDetailsPage() // Navigate to UserDetailsPage if data exists
+                ? const UserDetailsPage()
                 : SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Please fill in your details',
-                              style: TextStyle(fontSize: 18),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Name Field
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Full Name',
-                                hintText: 'Enter your full name',
-                                icon: const Icon(Icons.person_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Please fill in your details',
+                            style: TextStyle(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          // Name Field
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Full Name',
+                              icon: const Icon(Icons.person_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter your full name';
-                                }
-                                return null;
-                              },
                             ),
-                            const SizedBox(height: 16),
-
-                            // Email Field
-                            TextFormField(
-                              controller: _emailController,
-                              decoration: InputDecoration(
-                                labelText: 'Email Address',
-                                hintText: 'Enter your email address',
-                                icon: const Icon(Icons.email_outlined),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Enter your name'
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          // Phone number is automatically shown, not editable
+                          TextFormField(
+                            controller:
+                                TextEditingController(text: _userPhoneNumber),
+                            decoration: InputDecoration(
+                              labelText: 'Phone Number',
+                              icon: const Icon(Icons.phone),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter your email address';
-                                }
-                                return null;
-                              },
                             ),
-                            const SizedBox(height: 30),
-
-                            // Save Button with Loading Indicator
-                            ElevatedButton(
-                              onPressed: _isLoading ? null : _saveUserDetails,
-                              child: _isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
-                                  : const Text('Save Details'),
-                            ),
-                          ],
-                        ),
+                            enabled: false, // Disable editing the phone number
+                          ),
+                          const SizedBox(height: 30),
+                          // Save Button with Loading Indicator
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _saveUserDetails,
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text('Save Details'),
+                          ),
+                        ],
                       ),
                     ),
                   ),

@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:meka_app/models/user.dart'; // Update this path according to your project structure
 
 import 'login_screen.dart';
-import 'account_screen.dart'; // Replace with your actual input screen
 
 class UserDetailsPage extends StatefulWidget {
   const UserDetailsPage({super.key});
@@ -19,7 +19,6 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   bool _isFetching = true;
   String _userPhoneNumber = '';
   String _userName = '';
-  String _userEmail = '';
 
   @override
   void initState() {
@@ -42,11 +41,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       final data = doc.data();
 
-      _userName = data?['name'] ?? 'No name';
-      _userEmail = data?['email'] ?? 'No email';
+      if (data != null) {
+        final userModel = UserModel.fromMap(data);
+        _userName = userModel.name;
+        _userPhoneNumber = userModel.phone;
+      } else {
+        _userName = 'No name';
+      }
     } catch (e) {
       _userName = 'Error fetching name';
-      _userEmail = 'Error fetching email';
       _userPhoneNumber = 'Error fetching phone';
     }
 
@@ -108,12 +111,6 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                       ),
                       const Divider(),
                       _buildDetailItem(
-                        title: 'Email',
-                        value: _userEmail,
-                        icon: Icons.email,
-                      ),
-                      const Divider(),
-                      _buildDetailItem(
                         title: 'Phone Number',
                         value: _userPhoneNumber,
                         icon: Icons.phone,
@@ -139,17 +136,6 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
           style: Theme.of(context).textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
-        if (_userEmail.isNotEmpty &&
-            _userEmail != 'No email' &&
-            !_userEmail.startsWith('Error'))
-          Text(
-            _userEmail,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
         const SizedBox(height: 8),
       ],
     );

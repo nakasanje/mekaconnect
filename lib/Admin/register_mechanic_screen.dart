@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:meka_app/models/user.dart'; // Update this path according to your project structure
 
 class MechanicRegistrationScreen extends StatefulWidget {
   const MechanicRegistrationScreen({super.key});
@@ -27,26 +28,31 @@ class _MechanicRegistrationScreenState
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('users').add({
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'location': _locationController.text.trim(),
-        'specialty': _specialtyController.text.trim(),
-        'role': _selectedRole,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final String uid =
+          FirebaseFirestore.instance.collection('users').doc().id;
+
+      final userModel = UserModel(
+        uid: uid,
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        role: _selectedRole,
+      );
+
+      // Save only user details to 'users' collection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set(userModel.toMap());
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User registered successfully!')),
       );
 
-      // Clear the fields
+      // Clear fields
       _nameController.clear();
       _phoneController.clear();
       _locationController.clear();
       _specialtyController.clear();
-
-      // Reset role and form
       setState(() {
         _selectedRole = 'mechanic';
       });
@@ -92,15 +98,11 @@ class _MechanicRegistrationScreenState
             TextFormField(
               controller: _locationController,
               decoration: const InputDecoration(labelText: 'Location'),
-              validator: (val) =>
-                  val == null || val.isEmpty ? 'Enter location' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _specialtyController,
               decoration: const InputDecoration(labelText: 'Specialty'),
-              validator: (val) =>
-                  val == null || val.isEmpty ? 'Enter specialty' : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
