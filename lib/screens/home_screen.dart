@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:meka_app/screens/account_screen.dart';
-import 'request_screen.dart';
+import 'package:meka_app/screens/createservice.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,17 +23,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.phoneNumber != null) {
-      final query = await FirebaseFirestore.instance
-          .collection('users')
-          .where('phone', isEqualTo: user.phoneNumber)
-          .limit(1)
-          .get();
+      try {
+        final query = await FirebaseFirestore.instance
+            .collection('users')
+            .where('phone', isEqualTo: user.phoneNumber)
+            .limit(1)
+            .get();
 
-      if (query.docs.isNotEmpty) {
-        final data = query.docs.first.data();
-        setState(() {
-          _userName = data['name'] ?? '';
-        });
+        if (query.docs.isNotEmpty) {
+          final data = query.docs.first.data();
+          if (mounted) {
+            setState(() {
+              _userName = data['name'] ?? '';
+            });
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _userName = 'Error fetching user data';
+          });
+        }
       }
     }
   }
@@ -173,8 +183,10 @@ class _HomeScreenState extends State<HomeScreen> {
           return GestureDetector(
             onTap: () {
               if (service['label'] == 'Request Mechanic') {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => RequestScreen()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => CreateServiceRequestScreen()));
               }
             },
             child: Column(
