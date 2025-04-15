@@ -5,6 +5,8 @@ import 'package:meka_app/mechanic/service.dart';
 import 'package:meka_app/models/Servicerequest.dart';
 
 class UserServiceRequestsScreen extends StatefulWidget {
+  const UserServiceRequestsScreen({super.key});
+
   @override
   _UserServiceRequestsScreenState createState() =>
       _UserServiceRequestsScreenState();

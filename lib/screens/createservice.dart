@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:meka_app/models/Servicerequest.dart';
-import 'package:meka_app/screens/viewswevice.dart'; // Import the UserServiceRequestsScreen
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:meka_app/models/Servicerequest.dart';
+import 'package:meka_app/screens/viewswevice.dart';
 
 class CreateServiceRequestScreen extends StatefulWidget {
+  const CreateServiceRequestScreen({super.key});
+
   @override
   _CreateServiceRequestScreenState createState() =>
       _CreateServiceRequestScreenState();
@@ -20,80 +23,61 @@ class _CreateServiceRequestScreenState
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
-  String _locationData = '';
+  GoogleMapController? _mapController;
+  LatLng? _selectedLocation;
+  Set<Marker> _markers = {};
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _getAddressFromLatLng();
+  Future<void> _getCurrentLocation() async {
+    final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    _mapController?.animateCamera(
+        CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)));
   }
 
-  Future<void> _getAddressFromLatLng() async {
-    if (!mounted) return;
-    bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    _getCurrentLocation();
+  }
 
-    if (!isLocationEnabled) {
-      setState(() {
-        _locationData = 'Location access denied!';
-      });
-      return;
-    }
+  void _onTap(LatLng location) async {
+    setState(() {
+      _selectedLocation = location;
+      _markers = {
+        Marker(
+          markerId: const MarkerId("selected_location"),
+          position: location,
+        ),
+      };
+    });
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        setState(() {
-          _locationData = 'Location access denied!';
-        });
-        return;
-      }
-    }
+    final address =
+        await _getAddressFromLatLng(location.latitude, location.longitude);
+    setState(() {
+      _locationController.text = address;
+    });
+  }
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+  Future<String> _getAddressFromLatLng(double lat, double lng) async {
+    final url =
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&addressdetails=1';
+    final response = await http.get(Uri.parse(url));
 
-    String nominatimUrl =
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&addressdetails=1';
-
-    http.Response nominatimResponse = await http.get(Uri.parse(nominatimUrl));
-
-    if (nominatimResponse.statusCode == 200) {
-      Map<String, dynamic> data = jsonDecode(nominatimResponse.body);
-
-      String suburb =
-          data['address']['suburb'] ?? data['address']['hamlet'] ?? '';
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      String suburb = data['address']['suburb'] ?? '';
       String city = data['address']['city'] ?? data['address']['town'] ?? '';
-      String amenity =
-          data['address']['amenity'] ?? data['address']['village'] ?? '';
-      String road = data['address']['road'] ?? data['address']['footway'] ?? '';
-
-      if (city.endsWith(' Capital City')) {
-        city = city.replaceAll(' Capital City', '');
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _locationData = "$suburb, $amenity, $road, $city.";
-        _locationController.text = _locationData;
-      });
+      String road = data['address']['road'] ?? '';
+      return '$road, $suburb, $city';
     } else {
-      setState(() {
-        _locationData = 'Error fetching location data';
-      });
+      return 'Location unknown';
     }
   }
 
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -104,19 +88,20 @@ class _CreateServiceRequestScreenState
         return;
       }
 
-      final docRef =
-          FirebaseFirestore.instance.collection('serviceRequests').doc();
-
       final serviceRequest = ServiceRequest(
         userId: user.uid,
         serviceType: _serviceTypeController.text,
         description: _descriptionController.text,
         location: _locationController.text,
         status: 'Pending',
-        requestId: docRef.id,
+        requestId:
+            FirebaseFirestore.instance.collection('serviceRequests').doc().id,
       );
 
-      await docRef.set(serviceRequest.toMap());
+      await FirebaseFirestore.instance
+          .collection('serviceRequests')
+          .doc(serviceRequest.requestId)
+          .set(serviceRequest.toMap());
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Service request submitted!')),
@@ -130,14 +115,16 @@ class _CreateServiceRequestScreenState
       _serviceTypeController.clear();
       _descriptionController.clear();
       _locationController.clear();
+      setState(() {
+        _selectedLocation = null;
+        _markers.clear();
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -164,12 +151,26 @@ class _CreateServiceRequestScreenState
                     value!.isEmpty ? 'Enter description' : null,
               ),
               const SizedBox(height: 20),
+              SizedBox(
+                height: 250,
+                child: GoogleMap(
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(0.3476, 32.5825), // Kampala default
+                    zoom: 14,
+                  ),
+                  markers: _markers,
+                  onTap: _onTap,
+                ),
+              ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _locationController,
-                decoration: const InputDecoration(labelText: 'Location'),
-                enabled: false,
+                readOnly: true,
+                decoration:
+                    const InputDecoration(labelText: 'Selected Location'),
                 validator: (value) =>
-                    value!.isEmpty ? 'Location not found' : null,
+                    value!.isEmpty ? 'Select a location' : null,
               ),
               const SizedBox(height: 20),
               ElevatedButton(

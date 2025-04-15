@@ -5,6 +5,6 @@ class UsersManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Manage App Users'));
+    return const Center(child: Text('Manage App Users'));
   }
 }

@@ -1,5 +1,5 @@
 // login_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart'; // Still needed if you might add features later
+// Still needed if you might add features later
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:meka_app/auth/verification.dart'; // Import Verification screen

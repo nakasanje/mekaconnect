@@ -5,6 +5,6 @@ class ServiceRequestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Service Requests from Users'));
+    return const Center(child: Text('Service Requests from Users'));
   }
 }

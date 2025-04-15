@@ -106,7 +106,8 @@ class _MechanicProfileViewScreenState extends State<MechanicProfileViewScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => MechanicProfileUpdateScreen(),
+                          builder: (context) =>
+                              const MechanicProfileUpdateScreen(),
                         ),
                       );
                     },

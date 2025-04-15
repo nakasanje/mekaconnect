@@ -48,7 +48,7 @@ class _MechanicProfileUpdateScreenState
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => MechanicProfileViewScreen()),
+                  builder: (context) => const MechanicProfileViewScreen()),
             );
           }
         }
@@ -132,7 +132,8 @@ class _MechanicProfileUpdateScreenState
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MechanicProfileViewScreen()),
+          MaterialPageRoute(
+              builder: (context) => const MechanicProfileViewScreen()),
         );
       }
     } catch (e) {

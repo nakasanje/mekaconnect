@@ -87,7 +87,8 @@ class _MechanicDashboardScreenState extends State<MechanicDashboardScreen> {
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(16),
-                leading: Icon(Icons.request_page, color: Colors.blueAccent),
+                leading:
+                    const Icon(Icons.request_page, color: Colors.blueAccent),
                 title: const Text(
                   'View Service Requests',
                   style: TextStyle(
@@ -116,7 +117,7 @@ class _MechanicDashboardScreenState extends State<MechanicDashboardScreen> {
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(16),
-                leading: Icon(Icons.edit, color: Colors.blueAccent),
+                leading: const Icon(Icons.edit, color: Colors.blueAccent),
                 title: const Text(
                   'Edit Profile',
                   style: TextStyle(

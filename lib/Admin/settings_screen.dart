@@ -5,6 +5,6 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Admin Settings'));
+    return const Center(child: Text('Admin Settings'));
   }
 }
